@@ -87,18 +87,20 @@ function buildQuery(params: Record<string, string>): string {
 export async function getTokenBalances(address: string): Promise<TokenBalance[]> {
   const path = '/api/v6/dex/balance/all-token-balances-by-address';
   const query = buildQuery({ address, chains: XLAYER_CHAIN_ID });
-  const res = await apiRequest<OKXApiResponse<OKXBalanceData>>('GET', path + query);
+  const res = await apiRequest<any>('GET', path + query);
 
   if (res.code !== '0' || !res.data?.length) return [];
 
-  return res.data.map((t) => ({
-    symbol: t.symbol,
-    contractAddress: t.tokenContractAddress,
-    balance: t.balance,
-    rawBalance: t.rawBalance,
+  // Response: data[0].tokenAssets[]
+  const assets = res.data[0]?.tokenAssets || res.data;
+  return assets.map((t: any) => ({
+    symbol: t.symbol || '',
+    contractAddress: t.tokenContractAddress || '',
+    balance: t.balance || '0',
+    rawBalance: t.rawBalance || '0',
     priceUsd: parseFloat(t.tokenPrice) || 0,
-    valueUsd: parseFloat(t.balance) * (parseFloat(t.tokenPrice) || 0),
-    isRiskToken: t.isRiskToken,
+    valueUsd: parseFloat(t.balance || '0') * (parseFloat(t.tokenPrice) || 0),
+    isRiskToken: t.isRiskToken || false,
   }));
 }
 
@@ -120,28 +122,34 @@ export async function getTransactionHistory(
 
     const path = '/api/v6/dex/post-transaction/transactions-by-address';
     const query = buildQuery(params);
-    const res = await apiRequest<OKXApiResponse<OKXTransactionData>>('GET', path + query);
+    const res = await apiRequest<any>('GET', path + query);
 
     if (res.code !== '0' || !res.data?.length) break;
 
-    for (const tx of res.data) {
+    // Response: data[0].transactions[] with data[0].cursor
+    const wrapper = res.data[0] || {};
+    const txList = wrapper.transactions || res.data;
+    cursor = wrapper.cursor || '';
+
+    if (!txList?.length) break;
+
+    for (const tx of txList) {
       allTxs.push({
-        txHash: tx.txHash,
-        txTime: parseInt(tx.txTime, 10),
+        txHash: tx.txHash || '',
+        txTime: parseInt(tx.txTime, 10) || 0,
         from: tx.from?.[0]?.address || '',
         to: tx.to?.[0]?.address || '',
         amount: tx.amount || tx.to?.[0]?.amount || '0',
         symbol: tx.symbol || '',
         tokenContract: tx.tokenContractAddress || '',
-        txStatus: tx.txStatus as TransactionData['txStatus'],
+        txStatus: (tx.txStatus || 'success') as TransactionData['txStatus'],
         methodId: tx.methodId || '',
         txFee: tx.txFee || '0',
         hitBlacklist: tx.hitBlacklist || false,
       });
-      cursor = tx.cursor || '';
     }
 
-    if (!cursor || res.data.length < 20) break;
+    if (!cursor || txList.length < 20) break;
   }
 
   return allTxs;
