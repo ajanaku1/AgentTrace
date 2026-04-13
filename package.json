@@ -1,0 +1,35 @@
+{
+  "name": "agent-trace",
+  "version": "1.0.0",
+  "description": "Wallet exposure scanner skill for X Layer — analyzes on-chain risk using OnchainOS and Uniswap AI Skills",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agent-trace": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "scan": "tsx src/cli.ts scan",
+    "test": "tsx src/cli.ts scan 0x1234567890abcdef1234567890abcdef12345678"
+  },
+  "keywords": [
+    "xlayer",
+    "onchainos",
+    "wallet-scanner",
+    "risk-analysis",
+    "uniswap",
+    "agent-skill"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
